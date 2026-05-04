@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Advice</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Improved CSS for better visibility */
+        body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+        }
+        
+        .main {
+            padding: 20px;
+        }
+        
+        .chat-container {
+            max-width: 600px;
+            margin: 15px auto;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .chat-messages {
+            height: 350px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+        }
+        
+        .chat-input input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .chat-input button {
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #4caf50, #66bb6a);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .user-message {
+            background: linear-gradient(45deg, rgba(76, 175, 80, 0.4), rgba(102, 187, 106, 0.4));
+            text-align: right;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .ai-message {
+            background: linear-gradient(45deg, rgba(33, 150, 243, 0.4), rgba(66, 165, 245, 0.4));
+            text-align: left;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .ai-scanner {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .camera-preview {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        
+        .camera-controls button {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #ff6b6b, #ff8787);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .analysis-result {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .action-card {
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.1));
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.15));
+        }
+        
+        .action-card h3 {
+            margin: 0 0 8px 0;
+            color: #4caf50;
+            font-size: 16px;
+        }
+        
+        .action-card p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+        }
+        
+        h1, h2 {
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .ai-scanner h2 {
+            color: #4caf50;
+            margin-bottom: 15px;
+        }
+        
+        .chat-container h2 {
+            color: #2196f3;
+            margin-bottom: 15px;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .chart-container h2 {
+            color: #ff9800;
+            margin-bottom: 15px;
+        }
+        
+        .chart-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .chart-controls select,
+        .chart-controls button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .chart-controls button {
+            background: linear-gradient(45deg, #ff9800, #f57c00);
+            font-weight: bold;
+        }
+        
+        .chart-controls button:hover {
+            background: linear-gradient(45deg, #f57c00, #e65100);
+        }
+        
+        .chart-display {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .chart-insights {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .chart-insights h3 {
+            color: #4caf50;
+            margin-bottom: 10px;
+        }
+        
+        .chart-insights p {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="sidebar-toggle">×<i class="fas fa-bars"></i></div>
+    <div class="language-toggle" id="languageToggle" onclick="toggleLanguage()" title="Badilisha lugha">SW</div>
+    <h2>🌱 SHAMBA BORA</h2>
+    <ul>
+        <li onclick="location.href='dashboard.html'"><i class="fas fa-chart-line"></i> Dashboard</li>
+        <li onclick="location.href='farms.html'"><i class="fas fa-seedling"></i> Farms</li>
+        <li onclick="location.href='sensor.html'"><i class="fas fa-microchip"></i> Sensor Data</li>
+        <li class="active"><i class="fas fa-robot"></i> AI Advice</li>
+        <li onclick="location.href='irrigation.html'"><i class="fas fa-tint"></i> Irrigation</li>
+        <li onclick="location.href='weather.html'"><i class="fas fa-cloud-sun"></i> Weather</li>
+        <li onclick="location.href='market.html'"><i class="fas fa-coins"></i> Market</li>
+        <li onclick="location.href='notifications.html'"><i class="fas fa-bell"></i> Notifications</li>
+        <li onclick="location.href='profile.html'"><i class="fas fa-user"></i> Profile</li>
+        <li onclick="logout()" style="background: rgba(244, 67, 54, 0.6);"><i class="fas fa-sign-out-alt"></i> Logout</li>
+    </ul>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <h1>AI Smart Advice</h1>
+
+    <!-- QUICK ACTIONS -->
+    <div class="quick-actions">
+        <div class="action-card" onclick="askQuickAdvice('irrigation')">
+            <h3>Irrigation Advice</h3>
+            <p>Smart irrigation recommendations</p>
+        </div>
+        <div class="action-card" onclick="askQuickAdvice('planting')">
+            <h3>Planting Guide</h3>
+            <p>Best practices for planting</p>
+        </div>
+        <div class="action-card" onclick="askQuickAdvice('fertilizer')">
+            <h3>Fertilizer Tips</h3>
+            <p>Fertilizer recommendations</p>
+        </div>
+        <div class="action-card" onclick="askQuickAdvice('pests')">
+            <h3>Pest Control</h3>
+            <p>Identify and treat pests</p>
+        </div>
+    </div>
+
+    <!-- AI PLANT SCANNER -->
+    <div class="ai-scanner">
+        <h2>AI Plant Scanner</h2>
+        <video id="camera-video" class="camera-preview" style="display: none;"></video>
+        <canvas id="camera-canvas" style="display: none;"></canvas>
+        
+        <div class="camera-controls">
+            <button onclick="startCamera()" id="start-btn">Start Camera</button>
+            <button onclick="capturePhoto()" style="display: none;" id="capture-btn">Scan Plant</button>
+            <button onclick="resetCamera()" style="display: none;" id="reset-btn">Reset</button>
+        </div>
+        
+        <div id="ai-result" class="analysis-result" style="display: none;"></div>
+    </div>
+
+    <!-- AI CHART GENERATION -->
+    <div class="chart-container">
+        <h2>📊 AI Chart Generator</h2>
+        <div class="chart-controls">
+            <select id="chartType" onchange="generateAIChart()">
+                <option value="line">Line Chart</option>
+                <option value="bar">Bar Chart</option>
+                <option value="pie">Pie Chart</option>
+                <option value="doughnut">Doughnut Chart</option>
+            </select>
+            <select id="dataType" onchange="generateAIChart()">
+                <option value="sensor">Sensor Data</option>
+                <option value="weather">Weather Trends</option>
+                <option value="crop">Crop Performance</option>
+                <option value="irrigation">Irrigation Schedule</option>
+            </select>
+            <button onclick="generateAIChart()">🔄 Generate Chart</button>
+        </div>
+        <div class="chart-display">
+            <canvas id="aiChart" width="400" height="200"></canvas>
+        </div>
+        <div class="chart-insights" id="chartInsights">
+            <h3>📈 AI Insights</h3>
+            <p>Click "Generate Chart" to see AI-powered analysis of your farm data.</p>
+        </div>
+    </div>
+
+    <!-- AI CHAT -->
+    <div class="chat-container">
+        <h2>Chat with Eagle AI</h2>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai-message">
+                <p>Habari! Mimi ni AI Assistant wako wa kilimo. Naweza kukusaidia kwa maswali yoyote kuhusu kilimo. Uliza chochote!</p>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="Andika swali lako hapa..." onkeypress="handleChatKeyPress(event)">
+            <button onclick="sendMessage()">Tuma</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart.js for lightweight chart generation -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Remove dashboard.js for better performance -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// ============================================
+// VARIABLES
+// ============================================
+let currentStream = null;
+let chatHistory = [];
+let currentChart = null;
+
+// ============================================
+// INITIALIZE — Kitu kimoja tu, safi
+// ============================================
+document.addEventListener('DOMContentLoaded', function () {
+
+    // Login check — mahali pamoja tu
+    if (!localStorage.getItem("user_id")) {
+        window.location.href = "login.html";
+        return;
+    }
+
+    // Pakia historia ya mazungumzo
+    loadChatHistory();
+
+    // Zima camera ukitoka page
+    window.addEventListener('beforeunload', stopCamera);
+});
+
+// ============================================
+// CHAT FUNCTIONS
+// ============================================
+function handleChatKeyPress(event) {
+    if (event.key === 'Enter') sendMessage();
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    if (!message) return;
+
+    addMessageToChat(message, 'user');
+    input.value = '';
+    sendToAI(message);
+}
+
+async function sendToAI(message) {
+    const chatMessages = document.getElementById('chatMessages');
+
+    // Typing indicator
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'message ai-message';
+    typingDiv.id = 'typing-indicator';
+    typingDiv.innerHTML = '<p><strong>AI:</strong> 🤖 Inafikiri...</p>';
+    chatMessages.appendChild(typingDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    try {
+        const response = await fetch('http://localhost:5000/ask-ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: message })
+        });
+
+        if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+
+        const data = await response.json();
+
+        document.getElementById('typing-indicator')?.remove();
+        addMessageToChat(data.reply || 'Samahani, kuna tatizo kidogo.', 'ai');
+
+    } catch (error) {
+        console.error('Server Error:', error);
+        document.getElementById('typing-indicator')?.remove();
+
+        // Fallback ya ndani kama server haifanyi kazi
+        const fallback = generateLightweightResponse(message);
+        addMessageToChat(fallback, 'ai');
+    }
+}
+
+// ✅ Sanitize input — zuia XSS
+function sanitizeText(text) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
+}
+
+function addMessageToChat(message, sender) {
+    const chatMessages = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+
+    const safeMessage = sanitizeText(message);
+
+    if (sender === 'user') {
+        messageDiv.innerHTML = `<p><strong>Wewe:</strong> ${safeMessage}</p>`;
+    } else {
+        // AI message — ruhusu line breaks
+        messageDiv.innerHTML = `<p><strong>AI:</strong> ${message.replace(/\n/g, '<br>')}</p>`;
+    }
+
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Hifadhi historia (message 20 za mwisho tu)
+    chatHistory.push({ message, sender, timestamp: new Date().toISOString() });
+    if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+    
+    try {
+        localStorage.setItem('aiChatHistory', JSON.stringify(chatHistory));
+    } catch(e) {
+        console.warn('LocalStorage imejaa, inafutwa...', e);
+        chatHistory = [];
+        localStorage.removeItem('aiChatHistory');
+    }
+}
+
+// ✅ Inaoneshwa sasa ukifungua page upya
+function loadChatHistory() {
+    const saved = localStorage.getItem('aiChatHistory');
+    if (!saved) return;
+
+    try {
+        const history = JSON.parse(saved).slice(-10); // Onyesha 10 za mwisho tu
+        history.forEach(item => addMessageToChat(item.message, item.sender));
+        chatHistory = history;
+    } catch (e) {
+        console.warn('Historia haikuweza kupakiwa:', e);
+        localStorage.removeItem('aiChatHistory');
+    }
+}
+
+// ============================================
+// QUICK ACTIONS
+// ============================================
+function askQuickAdvice(topic) {
+    const questions = {
+        irrigation: "Nini njia bora ya umwagilia mazao yangu kwa msimu wa mvua?",
+        planting:   "Ni muda gani mwafaka wa kupanda mahindi kanda hii ya Tanzania?",
+        fertilizer: "Aina gani ya mbolea ni bora kwa mazao ya matango?",
+        pests:      "Nini dalili bora za kudhibiti wadudu wa mazao?"
+    };
+
+    const question = questions[topic];
+    if (question) {
+        document.getElementById('chatInput').value = question;
+        sendMessage();
+    }
+}
+
+// ============================================
+// CAMERA FUNCTIONS
+// ============================================
+function startCamera() {
+    stopCamera(); // Zima iliyopo kwanza
+
+    const video = document.getElementById('camera-video');
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+        alert('Kivinjari chako hakitumii kamera. Tafadhali tumia Chrome au Firefox.');
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+    })
+    .then(stream => {
+        currentStream = stream;
+        video.srcObject = stream;
+        video.style.display = 'block';
+        video.play();
+        document.getElementById('capture-btn').style.display = 'inline-block';
+        document.getElementById('start-btn').style.display = 'none';
+        document.getElementById('reset-btn').style.display = 'inline-block';
+    })
+    .catch(error => {
+        console.error('Kamera haifanyi kazi:', error);
+        alert('Kamera haikuweza kufunguliwa. Ruhusa imezuiwa au kamera haipo.');
+    });
+}
+
+function capturePhoto() {
+    const video = document.getElementById('camera-video');
+    const canvas = document.getElementById('camera-canvas');
+
+    if (!video.srcObject) {
+        alert('Tafadhali washa kamera kwanza.');
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    ctx.drawImage(video, 0, 0);
+
+    const imageData = canvas.toDataURL('image/jpeg', 0.6);
+    analyze(imageData);
+    stopCamera(); // ✅ Zima camera baada ya kupiga picha — inaokoa battery
+}
+
+function stopCamera() {
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+    }
+    const video = document.getElementById('camera-video');
+    if (video) {
+        video.srcObject = null;
+        video.style.display = 'none';
+    }
+    const captureBtn = document.getElementById('capture-btn');
+    if (captureBtn) captureBtn.style.display = 'none';
+}
+
+function resetCamera() {
+    stopCamera();
+    document.getElementById('start-btn').style.display = 'inline-block';
+    document.getElementById('reset-btn').style.display = 'none';
+    document.getElementById('ai-result').style.display = 'none';
+
+    const canvas = document.getElementById('camera-canvas');
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function analyze(imageData) {
+    const resultDiv = document.getElementById('ai-result');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<p>🔍 Inachambua mmea... Tafadhali subiri...</p>';
+
+    const base64Data = imageData.split(',')[1];
+    const byteArray = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    const blob = new Blob([byteArray], { type: 'image/jpeg' });
+
+    analyzeWithServer(blob);
+}
+
+async function analyzeWithServer(imageBlob) {
+    const resultDiv = document.getElementById('ai-result');
+
+    try {
+        const base64Image = await blobToBase64(imageBlob);
+
+        const response = await fetch('http://localhost:5000/scan-plant', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageData: base64Image.split(',')[1] })
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+
+        if (data.success) {
+            data.isPlant ? displayPlantResult(data) : displayNonPlantMessage();
+        } else {
+            throw new Error(data.error || 'Server error');
+        }
+
+    } catch (error) {
+        console.error('Scan Error:', error);
+        // Fallback
+        resultDiv.innerHTML = `
+            <div>
+                <h3>⚠️ Muunganiko wa Server Umeshindwa</h3>
+                <p>Hakikisha server yako inafanya kazi: <code>node server.js</code></p>
+                <p>Ushauri wa jumla: 🌱 Mwagilia mmea wako vizuri, 
+                angalia wadudu, na tumia mbolea inayofaa.</p>
+            </div>`;
+    }
+}
+
+function displayPlantResult(data) {
+    const resultDiv = document.getElementById('ai-result');
+    resultDiv.innerHTML = `
+        <h3>✅ Mmea Umetambuliwa!</h3>
+        <p><strong>Aina:</strong> ${sanitizeText(data.detectedPlant)}</p>
+        <p><strong>Uhakika:</strong> ${sanitizeText(data.confidence)}%</p>
+        <p><strong>Afya:</strong> ${sanitizeText(data.health)}</p>
+        <p><strong>Magonjwa:</strong> ${sanitizeText(data.diseases)}</p>
+        <h4>🌿 Ushauri:</h4>
+        <p>${sanitizeText(data.advice)}</p>
+        <h4>🛠️ Matunzo:</h4>
+        <p>${sanitizeText(data.care)}</p>`;
+}
+
+function displayNonPlantMessage() {
+    document.getElementById('ai-result').innerHTML = `
+        <h3>❌ Si Picha ya Mmea</h3>
+        <p>Tafadhali piga picha ya mmea halisi, karibu na mmea, 
+        na mwanga wa kutosha.</p>`;
+}
+
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
+}
+
+// ============================================
+// FALLBACK RESPONSES (server ikiwa chini)
+// ============================================
+function generateLightweightResponse(message) {
+    const msg = message.toLowerCase();
+
+    if (msg.includes('mahindi') || msg.includes('maize'))
+        return '🌽 Mahindi hupandwa Machi-Mei. Umbali: 75x75cm. Mbolea: NPK 20-20-20. Mwagilia kila wiki 1-2.';
+    if (msg.includes('nyanya') || msg.includes('tomato'))
+        return '🍅 Nyanya hupenda joto 20-25°C. Mwagilia kila siku 2-3. Angalia ugonjwa wa Early Blight.';
+    if (msg.includes('mbolea') || msg.includes('fertilizer'))
+        return '🌾 Tumia NPK wakati wa upandaji. Ongeza Urea wiki 4 baadaye. Mbolea ya kikaboni ni bora zaidi.';
+    if (msg.includes('maji') || msg.includes('irrigation'))
+        return '💧 Mwagilia asubuhi saa 6-8 au jioni. Drip irrigation inaokoa maji 40%.';
+    if (msg.includes('wadudu') || msg.includes('pest'))
+        return '🐛 Tumia Neem oil kwa wadudu. Angalia majani kila wiki. Fanya crop rotation kuzuia wadudu.';
+
+    return '🌱 Habari! Ninaweza kukusaidia kuhusu mazao, mbolea, umwagiliaji, au wadudu. Uliza swali lako!';
+}
+
+// ============================================
+// AI CHART GENERATION
+// ============================================
+function generateAIChart() {
+    const chartType = document.getElementById('chartType').value;
+    const dataType = document.getElementById('dataType').value;
+    const canvas = document.getElementById('aiChart');
+    const insightsDiv = document.getElementById('chartInsights');
+
+    if (currentChart) {
+        currentChart.destroy();
+        currentChart = null;
+    }
+
+    const chartData = generateChartData(dataType);
+    const ctx = canvas.getContext('2d');
+
+    currentChart = new Chart(ctx, {
+        type: chartType,
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: 'white' } } },
+            scales: (chartType !== 'pie' && chartType !== 'doughnut') ? {
+                x: { ticks: { color: 'white' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                y: { ticks: { color: 'white' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+            } : {}
+        }
+    });
+
+    generateAIInsights(dataType, chartData, insightsDiv);
+}
+
+function generateChartData(dataType) {
+    const generators = {
+        sensor:     generateSensorData,
+        weather:    generateWeatherData,
+        crop:       generateCropData,
+        irrigation: generateIrrigationData
+    };
+    return generators[dataType]?.() || generateSensorData();
+}
+
+function generateSensorData() {
+    const labels = ['Wiki 1','Wiki 2','Wiki 3','Wiki 4','Wiki 5','Wiki 6'];
+    return {
+        labels,
+        datasets: [
+            { label: 'Joto (°C)', data: labels.map(() => +(20 + Math.random()*15).toFixed(1)),
+              borderColor: 'rgb(255,99,132)', backgroundColor: 'rgba(255,99,132,0.2)', tension: 0.4 },
+            { label: 'Unyevu (%)', data: labels.map(() => +(40 + Math.random()*40).toFixed(1)),
+              borderColor: 'rgb(54,162,235)', backgroundColor: 'rgba(54,162,235,0.2)', tension: 0.4 },
+            { label: 'Unyevu wa Udongo (%)', data: labels.map(() => +(30 + Math.random()*50).toFixed(1)),
+              borderColor: 'rgb(75,192,192)', backgroundColor: 'rgba(75,192,192,0.2)', tension: 0.4 }
+        ]
+    };
+}
+
+function generateWeatherData() {
+    const labels = ['Jumatatu','Jumanne','Jumatano','Alhamisi','Ijumaa','Jumamosi','Jumapili'];
+    return {
+        labels,
+        datasets: [
+            { label: 'Mvua (mm)', data: labels.map(() => +(Math.random()*50).toFixed(1)),
+              backgroundColor: 'rgba(54,162,235,0.5)', borderColor: 'rgb(54,162,235)', borderWidth: 1 },
+            { label: 'Joto (°C)', data: labels.map(() => +(15 + Math.random()*20).toFixed(1)),
+              backgroundColor: 'rgba(255,99,132,0.5)', borderColor: 'rgb(255,99,132)', borderWidth: 1 }
+        ]
+    };
+}
+
+function generateCropData() {
+    const crops = ['Mahindi','Nyanya','Mchicha','Karoti','Bamia'];
+    return {
+        labels: crops,
+        datasets: [{
+            label: 'Mavuno (kg/ha)',
+            data: crops.map(() => +(50 + Math.random()*100).toFixed(1)),
+            backgroundColor: [
+                'rgba(255,99,132,0.5)','rgba(54,162,235,0.5)',
+                'rgba(255,205,86,0.5)','rgba(75,192,192,0.5)','rgba(153,102,255,0.5)'
+            ],
+            borderWidth: 1
+        }]
+    };
+}
+
+function generateIrrigationData() {
+    const days = ['Siku 1','Siku 2','Siku 3','Siku 4','Siku 5','Siku 6','Siku 7'];
+    return {
+        labels: days,
+        datasets: [
+            { label: 'Maji (L)', data: days.map(() => +(100 + Math.random()*200).toFixed(1)),
+              borderColor: 'rgb(75,192,192)', backgroundColor: 'rgba(75,192,192,0.2)', fill: true, tension: 0.4 },
+            { label: 'Unyevu wa Udongo (%)', data: days.map(() => +(30 + Math.random()*50).toFixed(1)),
+              borderColor: 'rgb(255,159,64)', backgroundColor: 'rgba(255,159,64,0.2)', fill: true, tension: 0.4 }
+        ]
+    };
+}
+
+function generateAIInsights(dataType, chartData, insightsDiv) {
+    const messages = {
+        sensor: () => {
+            const avg = (arr) => (arr.reduce((a,b) => a+b, 0) / arr.length).toFixed(1);
+            const temp = avg(chartData.datasets[0].data);
+            const moisture = avg(chartData.datasets[2].data);
+            return `Joto la wastani: ${temp}°C. Unyevu wa udongo: ${moisture}%. 
+                    ${moisture < 40 ? '⚠️ Unahitaji kumwagilia haraka!' : 
+                      moisture > 70 ? '⚠️ Punguza umwagiliaji.' : '✅ Hali nzuri.'}`;
+        },
+        weather: () => {
+            const total = chartData.datasets[0].data.reduce((a,b) => a+b, 0).toFixed(1);
+            return `Jumla ya mvua wiki hii: ${total}mm. 
+                    ${total > 150 ? '⚠️ Mvua nyingi — angalia mifereji.' :
+                      total < 50  ? '⚠️ Mvua kidogo — mwagilia zaidi.' : '✅ Mvua ya kawaida.'}`;
+        },
+        crop: () => {
+            const avg = (chartData.datasets[0].data.reduce((a,b) => a+b, 0) / 
+                         chartData.datasets[0].data.length).toFixed(1);
+            return `Mavuno ya wastani: ${avg} kg/ha. Endelea na matunzo mazuri ya mazao.`;
+        },
+        irrigation: () => {
+            const total = chartData.datasets[0].data.reduce((a,b) => a+b, 0).toFixed(0);
+            return `Jumla ya maji wiki hii: ${total}L. 
+                    ${total > 1000 ? '⚠️ Matumizi mengi — angalia uvujaji.' : '✅ Matumizi mazuri.'}`;
+        }
+    };
+
+    insightsDiv.innerHTML = `
+        <h3>📈 AI Insights</h3>
+        <p>${messages[dataType]?.() || 'Data imetengenezwa.'}</p>
+        <small>Imetolewa: ${new Date().toLocaleString('sw-TZ')}</small>`;
+}
+</script>
+
+<script src="dashboard.js"></script>
+
+</body>
+</html>

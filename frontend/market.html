@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Market</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+<!-- SIDEBAR (EXACT COPY) -->
+<div class="sidebar">
+    <div class="sidebar-toggle">×</i class="fas fa-bars"></div>
+    <div class="language-toggle" id="languageToggle" onclick="toggleLanguage()" title="Badilisha lugha">SW</div>
+    <h2>🌱 SHAMBA BORA</h2>
+    <ul>
+        <li onclick="location.href='dashboard.html'"><i class="fas fa-chart-line"></i> Dashboard</li>
+        <li onclick="location.href='farms.html'"><i class="fas fa-seedling"></i> Farms</li>
+        <li onclick="location.href='sensor.html'"><i class="fas fa-microchip"></i> Sensor Data</li>
+        <li onclick="location.href='ai.html'"><i class="fas fa-robot"></i> AI Advice</li>
+        <li onclick="location.href='irrigation.html'"><i class="fas fa-tint"></i> Irrigation</li>
+        <li onclick="location.href='weather.html'"><i class="fas fa-cloud-sun"></i> Weather</li>
+        <li class="active"><i class="fas fa-coins"></i> Market</li>
+        <li onclick="location.href='notifications.html'"><i class="fas fa-bell"></i> Notifications</li>
+        <li onclick="location.href='profile.html'"><i class="fas fa-user"></i> Profile</li>
+        <li onclick="logout()" style="background: rgba(244, 67, 54, 0.6);"><i class="fas fa-sign-out-alt"></i> Logout</li>
+    </ul>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <h1>Agricultural Market 💰</h1>
+
+    <!-- MARKET OVERVIEW -->
+    <div class="card">
+        <h3>📊 Market Overview</h3>
+        <div class="market-summary">
+            <div class="summary-item">
+                <i class="fas fa-arrow-trend-up"></i>
+                <p>Market Trend</p>
+                <h4>Bullish</h4>
+            </div>
+            <div class="summary-item">
+                <i class="fas fa-calendar"></i>
+                <p>Last Updated</p>
+                <h4 id="lastUpdated">Today</h4>
+            </div>
+            <div class="summary-item">
+                <i class="fas fa-chart-line"></i>
+                <p>Avg Price Change</p>
+                <h4>+5.2%</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- REGION SELECTOR -->
+    <div class="card">
+        <h3>� Select Region</h3>
+        <select id="regionSelector" onchange="updateMarketData()">
+            <option value="all">All Regions</option>
+            <option value="dar">Dar es Salaam</option>
+            <option value="arusha">Arusha</option>
+            <option value="mwanza">Mwanza</option>
+            <option value="mbeya">Mbeya</option>
+            <option value="dodoma">Dodoma</option>
+            <option value="tanga">Tanga</option>
+            <option value="morogoro">Morogoro</option>
+            <option value="kilimanjaro">Kilimanjaro</option>
+        </select>
+    </div>
+
+    <!-- CROP PRICES -->
+    <div class="card">
+        <h3>🌾 Current Crop Prices</h3>
+        <div class="crop-prices" id="cropPrices">
+            <div class="price-item">
+                <div class="crop-info">
+                    <span class="crop-icon">🌽</span>
+                    <div>
+                        <h4>Mahindi (Maize)</h4>
+                        <p class="price">1,500 TZS/kg</p>
+                    </div>
+                </div>
+                <div class="price-change positive">
+                    <i class="fas fa-arrow-up"></i> +5.2%
+                </div>
+            </div>
+            
+            <div class="price-item">
+                <div class="crop-info">
+                    <span class="crop-icon">🌾</span>
+                    <div>
+                        <h4>Mpunga (Rice)</h4>
+                        <p class="price">1,800 TZS/kg</p>
+                    </div>
+                </div>
+                <div class="price-change positive">
+                    <i class="fas fa-arrow-up"></i> +3.8%
+                </div>
+            </div>
+            
+            <div class="price-item">
+                <div class="crop-info">
+                    <span class="crop-icon">🥔</span>
+                    <div>
+                        <h4>Viazi (Potatoes)</h4>
+                        <p class="price">1,200 TZS/kg</p>
+                    </div>
+                </div>
+                <div class="price-change negative">
+                    <i class="fas fa-arrow-down"></i> -2.1%
+                </div>
+            </div>
+            
+            <div class="price-item">
+                <div class="crop-info">
+                    <span class="crop-icon">🍅</span>
+                    <div>
+                        <h4>Nyanya (Tomatoes)</h4>
+                        <p class="price">2,500 TZS/kg</p>
+                    </div>
+                </div>
+                <div class="price-change positive">
+                    <i class="fas fa-arrow-up"></i> +8.7%
+                </div>
+            </div>
+            
+            <div class="price-item">
+                <div class="crop-info">
+                    <span class="crop-icon">🌶️</span>
+                    <div>
+                        <h4>Mchicha (Spinach)</h4>
+                        <p class="price">800 TZS/bunch</p>
+                    </div>
+                </div>
+                <div class="price-change neutral">
+                    <i class="fas fa-minus"></i> 0.0%
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRICE CHART -->
+    <div class="card">
+        <h3>📈 Price Trends (30 Days)</h3>
+        <canvas id="priceChart" width="400" height="200"></canvas>
+        <div class="chart-controls">
+            <button onclick="changeChartPeriod('7')">7 Days</button>
+            <button onclick="changeChartPeriod('30')" class="active">30 Days</button>
+            <button onclick="changeChartPeriod('90')">90 Days</button>
+        </div>
+    </div>
+
+    <!-- MARKET INSIGHTS -->
+    <div class="card">
+        <h3>💡 Market Insights</h3>
+        <div class="insights">
+            <div class="insight-item">
+                <i class="fas fa-lightbulb"></i>
+                <p><strong>Best Time to Sell:</strong> Maize prices are expected to rise by 12% in the next 2 weeks due to increased demand.</p>
+            </div>
+            <div class="insight-item">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p><strong>Price Alert:</strong> Tomato prices are highly volatile this week. Consider selling now if you have stock.</p>
+            </div>
+            <div class="insight-item">
+                <i class="fas fa-chart-line"></i>
+                <p><strong>Trend Analysis:</strong> Overall agricultural prices show an upward trend of 5.2% this month.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PRICE ALERTS -->
+    <div class="card">
+        <h3>🔔 Price Alerts</h3>
+        <div class="alert-form">
+            <select id="cropSelect">
+                <option value="">Select Crop</option>
+                <option value="maize">Mahindi</option>
+                <option value="rice">Mpunga</option>
+                <option value="potatoes">Viazi</option>
+                <option value="tomatoes">Nyanya</option>
+            </select>
+            <input type="number" id="targetPrice" placeholder="Target Price (TZS/kg)">
+            <button onclick="addPriceAlert()">➕ Add Alert</button>
+        </div>
+        <div id="alertList" style="margin-top: 15px;"></div>
+    </div>
+
+</div>
+
+<script src="dashboard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Market data
+const marketData = {
+    all: {
+        maize: { price: 1500, change: 5.2, history: generateHistory(1500, 30) },
+        rice: { price: 1800, change: 3.8, history: generateHistory(1800, 30) },
+        potatoes: { price: 1200, change: -2.1, history: generateHistory(1200, 30) },
+        tomatoes: { price: 2500, change: 8.7, history: generateHistory(2500, 30) },
+        spinach: { price: 800, change: 0.0, history: generateHistory(800, 30) }
+    },
+    dar: {
+        maize: { price: 1600, change: 6.1, history: generateHistory(1600, 30) },
+        rice: { price: 1900, change: 4.2, history: generateHistory(1900, 30) },
+        potatoes: { price: 1300, change: -1.8, history: generateHistory(1300, 30) },
+        tomatoes: { price: 2700, change: 9.3, history: generateHistory(2700, 30) },
+        spinach: { price: 850, change: 1.2, history: generateHistory(850, 30) }
+    },
+    arusha: {
+        maize: { price: 1450, change: 4.8, history: generateHistory(1450, 30) },
+        rice: { price: 1750, change: 3.5, history: generateHistory(1750, 30) },
+        potatoes: { price: 1150, change: -2.5, history: generateHistory(1150, 30) },
+        tomatoes: { price: 2400, change: 8.1, history: generateHistory(2400, 30) },
+        spinach: { price: 750, change: -0.5, history: generateHistory(750, 30) }
+    }
+};
+
+// Generate mock price history
+function generateHistory(basePrice, days) {
+    const history = [];
+    let currentPrice = basePrice;
+    
+    for (let i = days; i >= 0; i--) {
+        const change = (Math.random() - 0.5) * 0.1;
+        currentPrice = currentPrice * (1 + change);
+        history.push(Math.round(currentPrice));
+    }
+    
+    return history;
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    if (!localStorage.getItem("user_id")) {
+        window.location.href = "login.html";
+        return;
+    }
+    
+    updateLastUpdated();
+    initializeCharts();
+    loadPriceAlerts();
+    
+    // Update prices every 5 minutes
+    setInterval(updateLastUpdated, 300000);
+});
+
+// Update last updated time
+function updateLastUpdated() {
+    const now = new Date();
+    document.getElementById("lastUpdated").textContent = now.toLocaleTimeString();
+}
+
+// Update market data based on region
+function updateMarketData() {
+    const region = document.getElementById("regionSelector").value;
+    const data = marketData[region] || marketData.all;
+    
+    updateCropPrices(data);
+    updatePriceChart(data);
+    updateRegionalChart();
+}
+
+// Update crop prices display
+function updateCropPrices(data) {
+    const priceContainer = document.getElementById("cropPrices");
+    
+    const crops = {
+        maize: { name: "Mahindi (Maize)", icon: "🌽" },
+        rice: { name: "Mpunga (Rice)", icon: "🌾" },
+        potatoes: { name: "Viazi (Potatoes)", icon: "🥔" },
+        tomatoes: { name: "Nyanya (Tomatoes)", icon: "🍅" },
+        spinach: { name: "Mchicha (Spinach)", icon: "🌶️" }
+    };
+    
+    let html = "";
+    for (const [key, crop] of Object.entries(crops)) {
+        const priceData = data[key];
+        const changeClass = priceData.change > 0 ? "positive" : priceData.change < 0 ? "negative" : "neutral";
+        const arrowIcon = priceData.change > 0 ? "fa-arrow-up" : priceData.change < 0 ? "fa-arrow-down" : "fa-minus";
+        const unit = key === "spinach" ? "bunch" : "kg";
+        
+        html += `
+            <div class="price-item">
+                <div class="crop-info">
+                    <span class="crop-icon">${crop.icon}</span>
+                    <div>
+                        <h4>${crop.name}</h4>
+                        <p class="price">${priceData.price.toLocaleString()} TZS/${unit}</p>
+                    </div>
+                </div>
+                <div class="price-change ${changeClass}">
+                    <i class="fas ${arrowIcon}"></i> ${priceData.change > 0 ? '+' : ''}${priceData.change}%
+                </div>
+            </div>
+        `;
+    }
+    
+    priceContainer.innerHTML = html;
+}
+
+// Initialize charts
+function initializeCharts() {
+    updatePriceChart(marketData.all);
+    updateRegionalChart();
+}
+
+// Update price chart
+function updatePriceChart(data) {
+    const ctx = document.getElementById("priceChart").getContext("2d");
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: Array.from({length: 30}, (_, i) => `Day ${i + 1}`),
+            datasets: [
+                {
+                    label: 'Mahindi',
+                    data: data.maize.history,
+                    borderColor: '#FFD700',
+                    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Mpunga',
+                    data: data.rice.history,
+                    borderColor: '#8B4513',
+                    backgroundColor: 'rgba(139, 69, 19, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Nyanya',
+                    data: data.tomatoes.history,
+                    borderColor: '#FF6347',
+                    backgroundColor: 'rgba(255, 99, 71, 0.1)',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                y: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                }
+            }
+        }
+    });
+}
+
+// Update regional comparison chart
+function updateRegionalChart() {
+    const ctx = document.getElementById("regionalChart").getContext("2d");
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Dar es Salaam', 'Arusha', 'Mwanza', 'Mbeya', 'Dodoma'],
+            datasets: [
+                {
+                    label: 'Mahindi (TZS/kg)',
+                    data: [1600, 1450, 1520, 1480, 1550],
+                    backgroundColor: '#FFD700'
+                },
+                {
+                    label: 'Mpunga (TZS/kg)',
+                    data: [1900, 1750, 1820, 1780, 1850],
+                    backgroundColor: '#8B4513'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: 'white' }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                y: {
+                    ticks: { color: 'white' },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                }
+            }
+        }
+    });
+}
+
+// Change chart period
+function changeChartPeriod(period) {
+    // Update button states
+    document.querySelectorAll('.chart-controls button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Regenerate data for the selected period
+    const region = document.getElementById("regionSelector").value;
+    const data = marketData[region] || marketData.all;
+    
+    for (const crop in data) {
+        data[crop].history = generateHistory(data[crop].price, parseInt(period));
+    }
+    
+    updatePriceChart(data);
+}
+
+// Add price alert
+function addPriceAlert() {
+    const crop = document.getElementById("cropSelect").value;
+    const targetPrice = document.getElementById("targetPrice").value;
+    
+    if (!crop || !targetPrice) {
+        alert("Please select a crop and enter a target price");
+        return;
+    }
+    
+    const alerts = JSON.parse(localStorage.getItem("priceAlerts") || "[]");
+    alerts.push({
+        id: Date.now(),
+        crop: crop,
+        targetPrice: parseInt(targetPrice),
+        created: new Date().toISOString()
+    });
+    
+    localStorage.setItem("priceAlerts", JSON.stringify(alerts));
+    
+    document.getElementById("cropSelect").value = "";
+    document.getElementById("targetPrice").value = "";
+    
+    displayPriceAlerts();
+    alert("Price alert added successfully!");
+}
+
+// Display price alerts
+function displayPriceAlerts() {
+    const alerts = JSON.parse(localStorage.getItem("priceAlerts") || "[]");
+    const alertList = document.getElementById("alertList");
+    
+    if (alerts.length === 0) {
+        alertList.innerHTML = "<p>No price alerts set</p>";
+        return;
+    }
+    
+    let html = "";
+    alerts.forEach(alert => {
+        html += `
+            <div class="alert-item">
+                <span>${alert.crop}: TZS ${alert.targetPrice.toLocaleString()}</span>
+                <button onclick="removeAlert(${alert.id})" style="background: #f44336;">❌</button>
+            </div>
+        `;
+    });
+    
+    alertList.innerHTML = html;
+}
+
+// Remove price alert
+function removeAlert(id) {
+    const alerts = JSON.parse(localStorage.getItem("priceAlerts") || "[]");
+    const filtered = alerts.filter(alert => alert.id !== id);
+    localStorage.setItem("priceAlerts", JSON.stringify(filtered));
+    displayPriceAlerts();
+}
+
+// Load price alerts
+function loadPriceAlerts() {
+    displayPriceAlerts();
+}
+</script>
+
+</body>
+</html>

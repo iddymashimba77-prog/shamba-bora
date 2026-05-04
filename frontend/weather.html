@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Weather</title>
+<link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-toggle">×<i class="fas fa-bars"></i></div>
+    <div class="language-toggle" id="languageToggle" onclick="toggleLanguage()" title="Badilisha lugha">SW</div>
+    <h2>🌱 SHAMBA BORA</h2>
+    <ul>
+        <li onclick="location.href='dashboard.html'"><i class="fas fa-chart-line"></i> Dashboard</li>
+        <li onclick="location.href='farms.html'"><i class="fas fa-seedling"></i> Farms</li>
+        <li onclick="location.href='sensor.html'"><i class="fas fa-microchip"></i> Sensor Data</li>
+        <li onclick="location.href='ai.html'"><i class="fas fa-robot"></i> AI Advice</li>
+        <li onclick="location.href='irrigation.html'"><i class="fas fa-tint"></i> Irrigation</li>
+        <li class= "active"><i class="fas fa-cloud-sun"></i> Weather</li>
+        <li onclick="location.href='market.html'"><i class="fas fa-coins"></i> Market</li>
+        <li onclick="location.href='notifications.html'"><i class="fas fa-bell"></i> Notifications</li>
+        <li onclick="location.href='profile.html'"><i class="fas fa-user"></i> Profile</li>
+    </ul>
+</div>
+
+<div class="main">
+
+<h1>Weather Forecast 🌤</h1>
+
+<div class="weather">
+<p data-sw="Mahali" data-en="Location">Morogoro</p>
+<h2>28°C</h2>
+<p data-sw="Jua kali ☀️" data-en="Sunny ☀️">Sunny ☀️</p>
+</div>
+
+<!-- GPS COORDINATES SECTION -->
+<div class="gps-weather-section">
+    <h3 data-sw="📍 Taarifa za GPS" data-en="📍 GPS Information">📍 GPS Information</h3>
+    <div class="gps-display">
+        <div class="gps-coords">
+            <p data-sw="Latitudo:" data-en="Latitude:"><strong data-sw="Latitudo:" data-en="Latitude:">Latitudo:</strong> <span id="gpsLatitude">-6.8213</span></p>
+            <p data-sw="Longitudo:" data-en="Longitude:"><strong data-sw="Longitudo:" data-en="Longitude:">Longitudo:</strong> <span id="gpsLongitude">37.6488</span></p>
+        </div>
+        <div class="gps-actions">
+            <button onclick="getCurrentWeatherLocation()" class="gps-btn">📍 Get Current Location</button>
+            <button onclick="enterManualCoordinates()" class="gps-btn">🗺️ Enter Coordinates</button>
+        </div>
+    </div>
+    <div class="location-status" id="locationStatus">
+        <p data-sw="🌍 Kutumia mahali pa sasa: Morogoro" data-en="🌍 Using current location: Morogoro">🌍 Using current location: Morogoro</p>
+    </div>
+</div>
+
+<!-- 7-Day Forecast -->
+<div class="weather-forecast">
+    <h3 data-sw="Taboza ya Siku 7" data-en="7-Day Forecast">7-Day Forecast</h3>
+    <div class="forecast-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 15px;">
+        <div class="forecast-day">
+            <p data-sw="Jt" data-en="Mon">Mon</p>
+            <p>☀️</p>
+            <p>30°/22°</p>
+        </div>
+        <div class="forecast-day">
+            <p data-sw="Jn" data-en="Tue">Tue</p>
+            <p>⛅</p>
+            <p>28°/21°</p>
+        </div>
+        <div class="forecast-day">
+            <p data-sw="Jj" data-en="Wed">Wed</p>
+            <p>🌧️</p>
+            <p>25°/19°</p>
+        </div>
+        <div class="forecast-day">
+            <p data-sw="Al" data-en="Thu">Thu</p>
+            <p>⛅</p>
+            <p>27°/20°</p>
+        </div>
+        <div class="forecast-day">
+            <p data-sw="Ij" data-en="Fri">Fri</p>
+            <p>☀️</p>
+            <p>29°/21°</p>
+        </div>
+        <div class="forecast-day">
+            <p data-sw="Jm" data-en="Sat">Sat</p>
+            <p>☀️</p>
+            <p>31°/23°</p>
+        </div>
+        <div class="forecast-day">
+            <p data-sw="Jp" data-en="Sun">Sun</p>
+            <p>⛅</p>
+            <p>28°/22°</p>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Weather Info -->
+<div class="weather-details" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;">
+    <div class="weather-info-card">
+        <h4 data-sw="Unyevu" data-en="Humidity">Humidity</h4>
+        <p>65%</p>
+    </div>
+    <div class="weather-info-card">
+        <h4 data-sw="Kasi ya Upepo" data-en="Wind Speed">Wind Speed</h4>
+        <p>12 km/h</p>
+    </div>
+    <div class="weather-info-card">
+        <h4 data-sw="Kunyesha" data-en="Rainfall">Rainfall</h4>
+        <p>2.5 mm</p>
+    </div>
+</div>
+
+</div>
+
+<script src="dashboard.js"></script>
+<script>
+// Get user location and fetch weather
+document.addEventListener('DOMContentLoaded', function() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            fetchWeatherData(lat, lon);
+        }, function(error) {
+            console.log('Location access denied, using default location');
+            fetchWeatherData(-6.8213, 37.6488); // Morogoro coordinates
+        });
+    } else {
+        fetchWeatherData(-6.8213, 37.6488); // Morogoro coordinates
+    }
+});
+
+function fetchWeatherData(lat, lon) {
+    // Using OpenWeatherMap API (you'll need to get an API key)
+    const apiKey = 'YOUR_API_KEY'; // Replace with actual API key
+    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;
+    
+    // For demo purposes, using mock data
+    updateWeatherDisplay({
+        name: 'Morogoro',
+        main: { temp: 28, humidity: 65 },
+        wind: { speed: 12 },
+        weather: [{ description: 'sunny', icon: '01d' }]
+    });
+}
+
+function updateWeatherDisplay(data) {
+    const locationElement = document.querySelector('.weather p');
+    const tempElement = document.querySelector('.weather h2');
+    const conditionElement = document.querySelector('.weather p:last-of-type');
+    
+    if (locationElement) locationElement.textContent = data.name;
+    if (tempElement) tempElement.textContent = `${Math.round(data.main.temp)}°C`;
+    if (conditionElement) conditionElement.textContent = data.weather[0].description;
+}
+
+// Get current GPS location for weather
+function getCurrentWeatherLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                
+                // Update GPS display
+                document.getElementById("gpsLatitude").textContent = lat.toFixed(6);
+                document.getElementById("gpsLongitude").textContent = lon.toFixed(6);
+                
+                // Update location status
+                const statusElement = document.getElementById("locationStatus");
+                statusElement.innerHTML = `
+                    <p data-sw="🌍 Kutumia mahali pa sasa: ${lat.toFixed(4)}, ${lon.toFixed(4)}" 
+                       data-en="🌍 Using current location: ${lat.toFixed(4)}, ${lon.toFixed(4)}">
+                        🌍 Using current location: ${lat.toFixed(4)}, ${lon.toFixed(4)}
+                    </p>
+                `;
+                
+                // Fetch weather for new location
+                fetchWeatherData(lat, lon);
+                
+                alert(`📍 Location updated!\nLatitudo: ${lat.toFixed(6)}\nLongitudo: ${lon.toFixed(6)}`);
+            },
+            function(error) {
+                let errorMessage = "Unable to get location: ";
+                
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage += "Location access denied by user.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage += "Location information unavailable.";
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage += "Location request timed out.";
+                        break;
+                    case error.UNKNOWN_ERROR:
+                        errorMessage += "Unknown error occurred.";
+                        break;
+                }
+                
+                alert(errorMessage);
+            }
+        );
+    } else {
+        alert("Geolocation is not supported by this browser.");
+    }
+}
+
+// Enter manual coordinates for weather
+function enterManualCoordinates() {
+    const lat = prompt("Tafadhali Latitudo (kama -6.7924):");
+    const lon = prompt("Tafadhali Longitudo (kama 39.2083):");
+    
+    if (lat && lon) {
+        const latitude = parseFloat(lat);
+        const longitude = parseFloat(lon);
+        
+        // Validate coordinates
+        if (latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180) {
+            // Update GPS display
+            document.getElementById("gpsLatitude").textContent = latitude.toFixed(6);
+            document.getElementById("gpsLongitude").textContent = longitude.toFixed(6);
+            
+            // Update location status
+            const statusElement = document.getElementById("locationStatus");
+            statusElement.innerHTML = `
+                <p data-sw="🌍 Kutumia mahali pa sasa: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}" 
+                       data-en="🌍 Using manual location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}">
+                        🌍 Using manual location: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}
+                    </p>
+            `;
+            
+            // Fetch weather for manual location
+            fetchWeatherData(latitude, longitude);
+            
+            alert(`📍 Location updated!\nLatitudo: ${latitude.toFixed(6)}\nLongitudo: ${longitude.toFixed(6)}`);
+        } else {
+            alert("❌ Invalid coordinates!\nLatitudo: -90 to 90\nLongitudo: -180 to 180");
+        }
+    }
+}
+</script>
+
+</body>
+</html>

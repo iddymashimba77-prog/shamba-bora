@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Farms</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+
+        h2, h4 {
+             background-color: rgb(25, 65, 25);
+             border-radius: 5px;
+             color: rgb(213, 219, 209);
+             font-weight: 400;
+             font-size: 24px;
+        }
+
+        .form-box {
+            background-color: rgb(71, 77, 70);
+            opacity: 0.9;
+            padding: 20px;
+            border-radius: 20px;
+        }
+
+        input {
+            width: 200px;
+            height: 30px;
+            border-radius: 10px;
+            border-color: rgb(10, 48, 10);
+        }
+
+        .ongezashamba {
+            margin: 5px 5px 5px 375px
+        }
+
+    </style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="sidebar-toggle">×</i class="fas fa-bars"></div>
+    <div class="language-toggle" id="languageToggle" onclick="toggleLanguage()" title="Badilisha lugha">SW</div>
+    <h2> SHAMBA BORA</h2>
+    <ul>
+        <li onclick="location.href='dashboard.html'"><i class="fas fa-chart-line"></i> Dashboard</li>
+        <li class= "active"><i class="fas fa-seedling"></i> Farms</li>
+        <li onclick="location.href='sensor.html'"><i class="fas fa-microchip"></i> Sensor Data</li>
+        <li onclick="location.href='ai.html'"><i class="fas fa-robot"></i> AI Advice</li>
+        <li onclick="location.href='irrigation.html'"><i class="fas fa-tint"></i> Irrigation</li>
+        <li onclick="location.href='weather.html'"><i class="fas fa-cloud-sun"></i> Weather</li>
+        <li onclick="location.href='market.html'"><i class="fas fa-coins"></i> Market</li>
+        <li onclick="location.href='notifications.html'"><i class="fas fa-bell"></i> Notifications</li>
+        <li onclick="location.href='profile.html'"><i class="fas fa-user"></i> Profile</li>
+        <li onclick="logout()" style="background: rgba(244, 67, 54, 0.6);"><i class="fas fa-sign-out-alt"></i> Logout</li>
+    </ul>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <h1>Mashamba Yangu </h1>
+
+    <!-- ADD FARM -->
+    <div class="form-box">
+        <h2>Add Farm</h2>
+
+        <input type="text" id="name" placeholder="Farm Name">
+        <input type="text" id="location" placeholder="Location">
+        <input type="text" id="type" placeholder="Farm Type">
+        
+        <!-- GPS Coordinates -->
+        <div class="gps-section">
+            <h4>📍 GPS Coordinates (For Satellite Monitoring)</h4>
+            <div class="gps-inputs">
+                <input type="number" id="latitude" placeholder="Latitude (e.g., -6.7924)" step="0.0001" min="-90" max="90">
+                <input type="number" id="longitude" placeholder="Longitude (e.g., 39.2083)" step="0.0001" min="-180" max="180">
+            </div>
+            <div class="gps-actions">
+                <button type="button" onclick="getCurrentLocation()" class="gps-btn">📍 Get My Location</button>
+                <button type="button" onclick="openMapsHelper()" class="gps-btn">🗺️ Find Coordinates</button>
+            </div>
+            <small style="color: #888; font-size: 12px;">
+                💡 Tip: Use GPS coordinates for accurate satellite monitoring. 
+                Without GPS, satellite images will use default Tanzania location.
+            </small>
+        </div>
+
+        <button class="ongezashamba" onclick="addFarm()">Add Farm</button>
+    </div>
+
+    <!-- COORDINATE SEARCH -->
+    <div class="coordinate-search-section">
+        <h2>🔍 Search Farm by Coordinates</h2>
+        <div class="search-form">
+            <input type="number" id="searchLatitude" placeholder="Latitude (e.g., -6.7924)" step="0.0001" min="-90" max="90">
+            <input type="number" id="searchLongitude" placeholder="Longitude (e.g., 39.2083)" step="0.0001" min="-180" max="180">
+            <button onclick="searchByCoordinates()" class="search-btn">🔍 Search Location</button>
+        </div>
+        <div class="search-result" id="searchResult"></div>
+    </div>
+
+    <!-- SATELLITE MAP -->
+    <div class="satellite-map-section">
+        <h2>🛰️ Farm Locations Map</h2>
+        <div id="farmMap" class="farm-map"></div>
+        <div style="margin-bottom: 10px;" class="map-controls">
+            <button onclick="centerMapOnFarms()" class="map-btn">🎯 Center on Farms</button>
+            <button onclick="toggleSatelliteView()" class="map-btn">🛰️ Satellite View</button>
+        </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="farms" id="farmsList"></div>
+
+</div>
+
+<script src="dashboard.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+
+const API = "http://127.0.0.1:8000/api/farms/";
+const ADD_API = "http://127.0.0.1:8000/api/farms/add/";
+
+// Global map variable
+let farmMap;
+let farmMarkers = [];
+let isSatelliteView = false;
+
+// LOAD FARMS
+function loadFarms() {
+    const userId = localStorage.getItem("user_id");
+    
+    console.log("=== LOAD FARMS DEBUG ===");
+    console.log("User ID from localStorage:", userId);
+    console.log("User ID type:", typeof userId);
+
+    fetch("http://127.0.0.1:8000/api/farms/")
+    .then(res => {
+        console.log("Response status:", res.status);
+        return res.json();
+    })
+    .then(data => {
+        console.log("ALL FARMS DATA:", data);
+        console.log("Number of farms:", data.length);
+
+        if (!userId) {
+            console.log("No user ID found, showing all farms");
+            const userFarms = data;
+            console.log("Farms to display:", userFarms);
+            
+            // Initialize map if not already done
+            initializeFarmMap();
+            
+            // Display farms with satellite advice
+            displayFarmsWithSatelliteAdvice(userFarms);
+            
+            // Update map with farm locations
+            updateFarmMap(userFarms);
+        } else {
+            const userFarms = data.filter(farm => Number(farm.user_id) === Number(userId));
+            console.log("Filtered farms for user", userId, ":", userFarms);
+            console.log("Number of user farms:", userFarms.length);
+            
+            // Initialize map if not already done
+            initializeFarmMap();
+            
+            // Display farms with satellite advice
+            displayFarmsWithSatelliteAdvice(userFarms);
+            
+            // Update map with farm locations
+            updateFarmMap(userFarms);
+        }
+    })
+    .catch(err => {
+        console.error("=== FARMS LOAD ERROR ===");
+        console.error("Error loading farms:", err);
+        console.error("Error name:", err.name);
+        console.error("Error message:", err.message);
+        console.error("Error stack:", err.stack);
+        
+        // Show detailed error message to user
+        const farmsList = document.getElementById("farmsList");
+        if (farmsList) {
+            farmsList.innerHTML = `
+                <div style="color: red; padding: 20px; background: rgba(255,0,0,0.1); border-radius: 8px; margin: 10px 0;">
+                    <h4>❌ Error Loading Farms</h4>
+                    <p><strong>Error:</strong> ${err.message}</p>
+                    <p><strong>Type:</strong> ${err.name}</p>
+                    <p><strong>URL:</strong> http://127.0.0.1:8000/api/farms/</p>
+                    <p><strong>Solution:</strong> Please check if Django server is running and CORS is configured.</p>
+                    <button onclick="loadFarms()" style="margin-top: 10px; padding: 8px 16px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button>
+                </div>
+            `;
+        }
+        
+        // Also try to show a simple test message
+        console.log("Testing if we can write to farmsList...");
+        if (farmsList) {
+            farmsList.innerHTML += "<p>Test: Can write to farmsList element</p>";
+        } else {
+            console.error("farmsList element not found in DOM!");
+        }
+    });
+}
+
+// Initialize Leaflet map
+function initializeFarmMap() {
+    if (farmMap) return; // Map already initialized
+    
+    farmMap = L.map('farmMap').setView([-6.7924, 39.2083], 7); // Tanzania center
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(farmMap);
+}
+
+// Display farms with complete information including coordinates
+function displayFarmsWithSatelliteAdvice(farms) {
+    console.log("=== DISPLAY FARMS DEBUG ===");
+    console.log("Farms to display:", farms);
+    console.log("Number of farms:", farms.length);
+    
+    const farmsList = document.getElementById("farmsList");
+    console.log("farmsList element:", farmsList);
+    
+    if (!farmsList) {
+        console.error("farmsList element not found!");
+        return;
+    }
+    
+    if (farms.length === 0) {
+        console.log("No farms to display");
+        farmsList.innerHTML = "<p>Hakuna mashamba yaliyopatikana 🌱</p>";
+        return;
+    }
+    
+    console.log("Building HTML for farms...");
+    let html = "";
+    farms.forEach((farm, index) => {
+        console.log(`Processing farm ${index}:`, farm);
+        const satelliteAdvice = getSatelliteAdvice(farm);
+        const healthStatus = getFarmHealthStatus(farm);
+        
+        console.log(`Farm ${index} - Name: ${farm.farm_name}, Lat: ${farm.latitude}, Lon: ${farm.longitude}`);
+        
+        html += `
+            <div class="card farm-card">
+                <div class="farm-header">
+                    <h3>🏡 ${farm.farm_name}</h3>
+                    <div class="farm-type-badge">${farm.farm_type}</div>
+                </div>
+                
+                <div class="farm-details">
+                    <div class="detail-row">
+                        <span class="detail-icon">📍</span>
+                        <span class="detail-text">${farm.location}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-icon">🌱</span>
+                        <span class="detail-text">Aina ya Shamba: ${farm.farm_type}</span>
+                    </div>
+                    
+                    ${farm.latitude && farm.longitude && farm.latitude !== "0E-8" && farm.longitude !== "0E-8" ? `
+                        <div class="detail-row coords-row">
+                            <span class="detail-icon">📡</span>
+                            <div class="coords-info">
+                                <span class="detail-text">GPS Coordinates:</span>
+                                <div class="coords-values">
+                                    <span class="coord-value">Latitude: ${Number(farm.latitude).toFixed(6)}</span>
+                                    <span class="coord-value">Longitude: ${Number(farm.longitude).toFixed(6)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="detail-row no-coords">
+                            <span class="detail-icon">⚠️</span>
+                            <span class="detail-text">Hakuna coordinates zilizoongezwa</span>
+                        </div>
+                    `}
+                </div>
+                
+                <div class="satellite-advice">
+                    <h4>🛰️ Uchambuzi wa Satellite</h4>
+                    <div class="health-indicator ${healthStatus.class}">
+                        ${healthStatus.icon} ${healthStatus.text}
+                    </div>
+                    <p class="advice-text">${satelliteAdvice}</p>
+                </div>
+                
+                <div class="farm-actions">
+                    ${farm.latitude && farm.longitude && farm.latitude !== "0E-8" && farm.longitude !== "0E-8" ? `
+                        <button onclick="focusOnFarm(${Number(farm.latitude)}, ${Number(farm.longitude)})" class="map-btn-small">🗺️ Ona kwenye Ramani</button>
+                        <button onclick="copyCoordinates(${Number(farm.latitude)}, ${Number(farm.longitude)})" class="copy-btn-small">📋 Nakili Coordinates</button>
+                    ` : ''}
+                    <button onclick="editFarm(${farm.id})" class="edit-btn-small">✏️ Hariri Shamba</button>
+                </div>
+            </div>
+        `;
+    });
+    
+    console.log("Final HTML length:", html.length);
+    console.log("Setting innerHTML...");
+    farmsList.innerHTML = html;
+    console.log("Farms displayed successfully!");
+}
+
+// Get satellite-based farm advice (lite mode)
+function getSatelliteAdvice(farm) {
+    // Simulate satellite analysis - in production use real NDVI data
+    const adviceOptions = [
+        "🌾 Crop health looks good. Continue current irrigation schedule.",
+        "💧 Some areas need more water. Consider targeted irrigation.",
+        "🌱 Vegetation density is optimal. Good growth conditions.",
+        "⚠️ Early signs of stress detected. Monitor soil moisture.",
+        "🌤️ Weather conditions favorable for crop development.",
+        "🍂 Some areas showing maturity. Consider harvesting soon."
+    ];
+    
+    return adviceOptions[Math.floor(Math.random() * adviceOptions.length)];
+}
+
+// Get farm health status
+function getFarmHealthStatus(farm) {
+    // Simulate health status - in production calculate from real NDVI
+    const healthScore = Math.random();
+    
+    if (healthScore > 0.7) {
+        return { class: "health-good", icon: "✅", text: "Healthy" };
+    } else if (healthScore > 0.4) {
+        return { class: "health-medium", icon: "⚠️", text: "Medium" };
+    } else {
+        return { class: "health-bad", icon: "❌", text: "Needs Attention" };
+    }
+}
+
+// Update farm map with markers
+function updateFarmMap(farms) {
+    // Clear existing markers
+    farmMarkers.forEach(marker => farmMap.removeLayer(marker));
+    farmMarkers = [];
+    
+    farms.forEach(farm => {
+        if (farm.latitude && farm.longitude) {
+            const marker = L.marker([farm.latitude, farm.longitude])
+                .addTo(farmMap)
+                .bindPopup(`
+                    <strong>${farm.farm_name}</strong><br>
+                    📍 ${farm.location}<br>
+                    🌱 ${farm.farm_type}<br>
+                    📡 ${Number(farm.latitude).toFixed(4)}, ${Number(farm.longitude).toFixed(4)}
+                `);
+            
+            farmMarkers.push(marker);
+        }
+    });
+    
+    // If we have farms with coordinates, center the map on them
+    if (farmMarkers.length > 0) {
+        const group = new L.featureGroup(farmMarkers);
+        farmMap.fitBounds(group.getBounds().pad(0.1));
+    }
+}
+
+// Center map on all farms
+function centerMapOnFarms() {
+    if (farmMarkers.length > 0) {
+        const group = new L.featureGroup(farmMarkers);
+        farmMap.fitBounds(group.getBounds().pad(0.1));
+    } else {
+        alert("No farms with GPS coordinates found");
+    }
+}
+
+// Toggle satellite view
+function toggleSatelliteView() {
+    if (isSatelliteView) {
+        // Switch back to OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(farmMap);
+        isSatelliteView = false;
+    } else {
+        // Switch to satellite view (using Esri WorldImagery)
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri'
+        }).addTo(farmMap);
+        isSatelliteView = true;
+    }
+}
+
+// Focus on specific farm
+function focusOnFarm(lat, lon) {
+    farmMap.setView([lat, lon], 15);
+}
+
+// Search by coordinates
+function searchByCoordinates() {
+    const lat = document.getElementById("searchLatitude").value.trim();
+    const lon = document.getElementById("searchLongitude").value.trim();
+    const resultDiv = document.getElementById("searchResult");
+    
+    if (!lat || !lon) {
+        resultDiv.innerHTML = '<p style="color: #ff9800;">⚠️ Please enter both latitude and longitude</p>';
+        return;
+    }
+    
+    // Validate coordinates
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lon);
+    
+    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        resultDiv.innerHTML = '<p style="color: #f44336;">❌ Invalid coordinates. Latitude: -90 to 90, Longitude: -180 to 180</p>';
+        return;
+    }
+    
+    // Add search marker to map
+    if (farmMap) {
+        // Remove existing search marker
+        if (window.searchMarker) {
+            farmMap.removeLayer(window.searchMarker);
+        }
+        
+        // Add new search marker
+        window.searchMarker = L.marker([latitude, longitude])
+            .addTo(farmMap)
+            .bindPopup(`
+                <strong>🔍 Searched Location</strong><br>
+                📡 ${latitude.toFixed(4)}, ${longitude.toFixed(4)}<br>
+                <small>Manual coordinate search</small>
+            `)
+            .openPopup();
+        
+        // Center map on searched location
+        farmMap.setView([latitude, longitude], 15);
+        
+        // Show success message
+        resultDiv.innerHTML = `
+            <div style="background: rgba(76, 175, 80, 0.2); padding: 10px; border-radius: 8px; margin-top: 10px;">
+                <p style="color: #4CAF50; margin: 0;">✅ Location found!</p>
+                <p style="margin: 5px 0;">📡 Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}</p>
+                <p style="margin: 5px 0; font-size: 0.9em;">💡 Tip: Add these coordinates to your farm for permanent monitoring</p>
+            </div>
+        `;
+        
+        // Check if any farms are nearby
+        checkNearbyFarms(latitude, longitude);
+    }
+}
+
+// Check for nearby farms
+function checkNearbyFarms(searchLat, searchLon) {
+    const userId = localStorage.getItem("user_id");
+    
+    fetch("http://127.0.0.1:8000/api/farms/")
+        .then(res => res.json())
+        .then(data => {
+            const userFarms = data.filter(farm => Number(farm.user_id) === Number(userId));
+            const nearbyFarms = userFarms.filter(farm => {
+                if (!farm.latitude || !farm.longitude) return false;
+                
+                const distance = calculateDistance(
+                    searchLat, searchLon,
+                    farm.latitude, farm.longitude
+                );
+                
+                return distance <= 10; // Within 10km
+            });
+            
+            if (nearbyFarms.length > 0) {
+                const resultDiv = document.getElementById("searchResult");
+                resultDiv.innerHTML += `
+                    <div style="background: rgba(33, 150, 243, 0.2); padding: 10px; border-radius: 8px; margin-top: 10px;">
+                        <p style="color: #2196F3; margin: 0;">🌱 Found ${nearbyFarms.length} nearby farm(s):</p>
+                        ${nearbyFarms.map(farm => 
+                            `<p style="margin: 5px 0;">• ${farm.farm_name} (${calculateDistance(searchLat, searchLon, farm.latitude, farm.longitude).toFixed(1)}km away)</p>`
+                        ).join('')}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error("Error checking nearby farms:", error);
+        });
+}
+
+// Calculate distance between two coordinates (Haversine formula)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    
+    return R * c;
+}
+
+// Add Farm
+function addFarm() {
+    const name = document.getElementById("name").value.trim();
+    const location = document.getElementById("location").value.trim();
+    const type = document.getElementById("type").value.trim();
+    const latitude = document.getElementById("latitude").value.trim();
+    const longitude = document.getElementById("longitude").value.trim();
+    const userId = localStorage.getItem("user_id");
+
+    if (!name || !location || !type) {
+        alert("Please fill in all required fields!");
+        return;
+    }
+
+    if (!userId) {
+        alert("Login required");
+        window.location.href = "login.html";
+        return;
+    }
+
+    const farmData = {
+        name: name,
+        location: location,
+        farm_type: type,
+        user_id: parseInt(userId)
+    };
+
+    // Add GPS coordinates if provided
+    if (latitude && longitude) {
+        farmData.latitude = parseFloat(latitude);
+        farmData.longitude = parseFloat(longitude);
+    }
+
+    fetch("http://127.0.0.1:8000/api/farms/add/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(farmData)
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("ADD RESPONSE:", data);
+
+        if (data.status === "success") {
+            alert("Farm added successfully 🌱");
+
+            loadFarms();
+
+            document.getElementById("name").value = "";
+            document.getElementById("location").value = "";
+            document.getElementById("type").value = "";
+            document.getElementById("latitude").value = "";
+            document.getElementById("longitude").value = "";
+        } else {
+            alert(data.message || "Failed to add farm");
+        }
+    })
+    .catch(error => {
+        console.error("ERROR:", error);
+        alert("Server error");
+    });
+}
+
+// Simple GPS coordinate functions
+function useFarmCoordinates() {
+    const lat = document.getElementById("farmLatitude").value.trim();
+    const lon = document.getElementById("farmLongitude").value.trim();
+    
+    if (!lat || !lon) {
+        alert("⚠️ Please enter both latitude and longitude!");
+        return;
+    }
+    
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lon);
+    
+    // Validate coordinates
+    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        alert("❌ Invalid coordinates!\nLatitude: -90 to 90\nLongitude: -180 to 180");
+        return;
+    }
+    
+    // Copy coordinates to main form
+    document.getElementById("latitude").value = lat;
+    document.getElementById("longitude").value = lon;
+    
+    // Show success message
+    alert(`✅ GPS coordinates updated!\nLatitude: ${latitude.toFixed(6)}\nLongitude: ${longitude.toFixed(6)}\n\nThese coordinates will be used for your new farm.`);
+}
+
+function getCurrentLocationForFarm() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                
+                // Update both coordinate inputs
+                document.getElementById("latitude").value = lat.toFixed(6);
+                document.getElementById("longitude").value = lon.toFixed(6);
+                document.getElementById("farmLatitude").value = lat.toFixed(6);
+                document.getElementById("farmLongitude").value = lon.toFixed(6);
+                
+                alert(`📍 Location detected!\nLatitude: ${lat.toFixed(6)}\nLongitude: ${lon.toFixed(6)}\n\nCoordinates copied to farm form!`);
+            },
+            function(error) {
+                let errorMessage = "Unable to get location: ";
+                
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage += "Location access denied by user.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage += "Location information unavailable.";
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage += "Location request timed out.";
+                        break;
+                    case error.UNKNOWN_ERROR:
+                        errorMessage += "Unknown error occurred.";
+                        break;
+                }
+                
+                alert(errorMessage);
+            }
+        );
+    } else {
+        alert("Geolocation is not supported by this browser.");
+    }
+}
+
+// GPS Hardware Integration Functions
+function connectGPSHardware() {
+    // Simulate GPS hardware connection
+    updateGPSDeviceStatus(true, "GPS Device Connected", "Device ready for tracking");
+    startLiveGPSTracking();
+    
+    alert("🛰️ GPS Device Connected!\n\nDevice is now ready for real-time farm tracking.");
+}
+
+function scanGPSDevices() {
+    // Simulate device scanning
+    updateGPSDeviceStatus(false, "Scanning for GPS Devices...", "Searching for available devices");
+    
+    setTimeout(() => {
+        const devices = [
+            { name: "Garmin GPS USB", id: "garmin_usb", status: "available" },
+            { name: "Bluetooth GPS Module", id: "bt_gps", status: "available" },
+            { name: "Serial GPS Receiver", id: "serial_gps", status: "unavailable" }
+        ];
+        
+        let deviceList = "Found GPS Devices:\n\n";
+        devices.forEach(device => {
+            deviceList += `• ${device.name} (${device.status})\n`;
+        });
+        
+        alert(`📡 GPS Device Scan Results:\n\n${deviceList}`);
+        updateGPSDeviceStatus(false, "GPS Device Scan Complete", `${devices.length} devices found`);
+    }, 2000);
+}
+
+function configureGPSDevice() {
+    const config = {
+        updateInterval: prompt("GPS Update Interval (seconds):", "5"),
+        accuracy: prompt("Required Accuracy (meters):", "3"),
+        baudRate: prompt("Baud Rate (for serial devices):", "9600")
+    };
+    
+    if (config.updateInterval && config.accuracy && config.baudRate) {
+        localStorage.setItem("gpsConfig", JSON.stringify(config));
+        updateGPSDeviceStatus(true, "GPS Device Configured", `Update: ${config.updateInterval}s, Accuracy: ${config.accuracy}m`);
+        alert("⚙️ GPS Device Configured Successfully!");
+    } else {
+        alert("❌ Invalid configuration values");
+    }
+}
+
+function updateGPSDeviceStatus(connected, title, message) {
+    const statusElement = document.getElementById("gpsDeviceStatus");
+    const indicatorElement = statusElement.querySelector(".status-indicator");
+    const textElement = statusElement.querySelector(".status-text");
+    
+    if (connected) {
+        indicatorElement.className = "status-indicator status-online";
+        textElement.textContent = title;
+    } else {
+        indicatorElement.className = "status-indicator status-offline";
+        textElement.textContent = title;
+    }
+    
+    // Update status message
+    const statusMessage = statusElement.parentElement.querySelector(".hardware-info h3");
+    if (statusMessage) {
+        statusMessage.textContent = message;
+    }
+}
+
+function startLiveGPSTracking() {
+    if (!navigator.geolocation) {
+        console.log("Geolocation not supported");
+        return;
+    }
+    
+    // Get GPS configuration
+    const gpsConfig = localStorage.getItem("gpsConfig");
+    const config = gpsConfig ? JSON.parse(gpsConfig) : { updateInterval: 5000, accuracy: 5 };
+    
+    // Start continuous GPS tracking
+    const watchId = navigator.geolocation.watchPosition(
+        function(position) {
+            updateLiveCoordinates(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+        },
+        function(error) {
+            console.error("GPS Error:", error);
+            updateLiveCoordinates(null, null, null);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
+        }
+    );
+    
+    // Store watch ID for cleanup
+    window.gpsWatchId = watchId;
+    
+    console.log("GPS tracking started with config:", config);
+}
+
+function updateLiveCoordinates(latitude, longitude, accuracy) {
+    const latElement = document.getElementById("liveLatitude");
+    const lonElement = document.getElementById("liveLongitude");
+    const latStatusElement = document.getElementById("latStatus");
+    const lonStatusElement = document.getElementById("lonStatus");
+    const accuracyElement = document.getElementById("gpsAccuracy");
+    const satellitesElement = document.getElementById("satelliteCount");
+    const timeElement = document.getElementById("lastUpdateTime");
+    
+    if (latitude !== null && longitude !== null) {
+        // Update coordinate display
+        latElement.textContent = latitude.toFixed(6);
+        lonElement.textContent = longitude.toFixed(6);
+        latStatusElement.textContent = "Signal Good";
+        lonStatusElement.textContent = "Signal Good";
+        latStatusElement.className = "coord-status status-good";
+        lonStatusElement.className = "coord-status status-good";
+        
+        // Update accuracy
+        accuracyElement.textContent = accuracy ? accuracy.toFixed(1) : "--";
+        
+        // Update satellites (simulate based on accuracy)
+        const satelliteCount = accuracy ? Math.min(12, Math.floor(10 / accuracy)) : "--";
+        satellitesElement.textContent = satelliteCount;
+        
+        // Update time
+        const now = new Date();
+        timeElement.textContent = now.toLocaleTimeString();
+        
+        // Update farm map with live position
+        if (farmMap && latitude && longitude) {
+            // Remove existing live marker
+            if (window.liveGPSPMarker) {
+                farmMap.removeLayer(window.liveGPSPMarker);
+            }
+            
+            // Add live GPS marker
+            window.liveGPSPMarker = L.marker([latitude, longitude], {
+                icon: L.divIcon({
+                    className: 'live-gps-marker',
+                    html: '<div style="background: #ff0000; color: white; border-radius: 50%; width: 12px; height: 12px; display: flex; align-items: center; justify-content: center; font-size: 8px;">🔴</div>',
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                })
+            })
+            .addTo(farmMap)
+            .bindPopup(`
+                <strong>🛰️ Live GPS Position</strong><br>
+                📡 ${latitude.toFixed(6)}, ${longitude.toFixed(6)}<br>
+                🎯 Accuracy: ${accuracy ? accuracy.toFixed(1) + 'm' : 'Unknown'}<br>
+                <small>Real-time tracking active</small>
+            `);
+            
+            // Center map on live position
+            farmMap.setView([latitude, longitude], 15);
+        }
+    } else {
+        // No signal
+        latElement.textContent = "--.------";
+        lonElement.textContent = "--.------";
+        latStatusElement.textContent = "No Signal";
+        lonStatusElement.textContent = "No Signal";
+        latStatusElement.className = "coord-status status-error";
+        lonStatusElement.className = "coord-status status-error";
+        accuracyElement.textContent = "--";
+        satellitesElement.textContent = "--";
+        timeElement.textContent = "--:--";
+    }
+}
+
+// Copy coordinates to clipboard
+function copyCoordinates(latitude, longitude) {
+    const coordsText = `Latitude: ${latitude.toFixed(6)}, Longitude: ${longitude.toFixed(6)}`;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(coordsText).then(() => {
+            alert('📋 Coordinates zimekopierwa kwenye clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy coordinates: ', err);
+            alert('❌ Imeshindikana kukopierwa coordinates. Tafadhali jaribu tena.');
+        });
+    } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = coordsText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('📋 Coordinates zimekopierwa kwenye clipboard!');
+    }
+}
+
+// Edit farm (placeholder function)
+function editFarm(farmId) {
+    alert(`✏️ Kazi ya kuhariri shamba #${farmId} bado haijakamilishwa. Hii itakuja baadaye.`);
+}
+
+// Get current GPS location
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                
+                document.getElementById("latitude").value = lat.toFixed(6);
+                document.getElementById("longitude").value = lon.toFixed(6);
+                
+                alert(`📍 Location detected!\nLatitude: ${lat.toFixed(6)}\nLongitude: ${lon.toFixed(6)}`);
+            },
+            function(error) {
+                let errorMessage = "Unable to get location: ";
+                
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage += "Location access denied by user.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage += "Location information unavailable.";
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage += "Location request timed out.";
+                        break;
+                    case error.UNKNOWN_ERROR:
+                        errorMessage += "Unknown error occurred.";
+                        break;
+                }
+                
+                alert(errorMessage);
+            }
+        );
+    } else {
+        alert("Geolocation is not supported by this browser.");
+    }
+}
+
+// Open Google Maps helper
+function openMapsHelper() {
+    alert("🗺️ How to get GPS coordinates:\n\n1. Go to Google Maps\n2. Right-click on your farm location\n3. Click on the coordinates that appear\n4. Copy and paste the numbers\n\nExample Dar es Salaam: -6.7924, 39.2083");
+    window.open("https://www.google.com/maps", "_blank");
+}
+
+// AUTO LOAD
+window.addEventListener("DOMContentLoaded", () => {
+    console.log("=== PAGE LOAD DEBUG ===");
+    console.log("DOM Content Loaded - Starting loadFarms...");
+    console.log("Current URL:", window.location.href);
+    console.log("User ID in localStorage:", localStorage.getItem("user_id"));
+    
+    // Check if farmsList element exists
+    const farmsList = document.getElementById("farmsList");
+    console.log("farmsList element on page load:", farmsList);
+    
+    // Add a test message to see if we can write to it
+    if (farmsList) {
+        farmsList.innerHTML = "<p>Loading farms...</p>";
+        console.log("Successfully wrote test message to farmsList");
+    } else {
+        console.error("farmsList element not found on page load!");
+    }
+    
+    // Load farms
+    if (!localStorage.getItem("user_id")) {
+        window.location.href = "login.html";
+        return;
+    }
+    loadFarms();
+});
+
+</script>
+
+</body>
+</html>

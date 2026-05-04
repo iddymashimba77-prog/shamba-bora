@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com" />
+    <!-- <script src="https://unpkg.com"></script> -->
+
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="sidebar-toggle">×</div>
+    <div class="language-toggle" id="languageToggle" onclick="toggleLanguage()" title="Badilisha lugha">SW</div>
+    <h2> SHAMBA BORA</h2>
+    <ul>
+        <li class= "active"><i class="fas fa-chart-line"></i> Dashboard</li>
+        <li onclick="location.href='farms.html'"><i class="fas fa-seedling"></i> Farms</li>
+        <li onclick="location.href='sensor.html'"><i class="fas fa-microchip"></i> Sensor Data</li>
+        <li onclick="location.href='ai.html'"><i class="fas fa-robot"></i> AI Advice</li>
+        <li onclick="location.href='irrigation.html'"><i class="fas fa-tint"></i> Irrigation</li>
+        <li onclick="location.href='weather.html'"><i class="fas fa-cloud-sun"></i> Weather</li>
+        <li onclick="location.href='market.html'"><i class="fas fa-coins"></i> Market</li>
+        <li onclick="location.href='notifications.html'"><i class="fas fa-bell"></i> Notifications</li>
+        <li onclick="location.href='profile.html'"><i class="fas fa-user"></i> Profile</li>
+        <li onclick="logout()" style="background: rgba(244, 67, 54, 0.6);"><i class="fas fa-sign-out-alt"></i> Logout</li>
+    </ul>
+</div>
+<!-- MAIN -->
+<div class="main">
+
+    <h1 id="welcomeText"></h1>
+
+    <!-- SENSOR CARDS -->
+    <div class="cards">
+    <div class="card">
+        <i class="fas fa-tint"></i>
+        <p>Soil Moisture</p>
+        <h2>65%</h2>
+    </div>
+
+    <div class="card">
+        <i class="fas fa-thermometer-half"></i>
+        <p>Temperature</p>
+        <h2>24°C</h2>
+    </div>
+
+    <div class="card">
+        <i class="fas fa-cloud"></i>
+        <p>Humidity</p>
+        <h2>70%</h2>
+    </div>
+
+    <div class="card">
+        <i class="fas fa-flask"></i>
+        <p>pH</p>
+        <h2>6.8</h2>
+    </div>
+</div>
+
+<!-- Sehemu ya kuingiza coordinate -->
+<div style="margin-bottom: 10px;">
+    <input type="number" id="lat" placeholder="Ingiza Latitude (mf. -6.16)" step="any">
+    <input type="number" id="lng" placeholder="Ingiza Longitude (mf. 39.20)" step="any">
+    <button onclick="updateMap()">View on Map</button>
+</div>
+
+<!-- Sehemu ya Ramani -->
+<div id="map" style="height: 400px; width: 100%;"></div>
+
+    <!-- SATELLITE NDVI MONITORING -->
+   <!-- <div class="satellite-section">
+    <h2 class = "satellite">🛰️ Satellite Farm Monitoring</h2>
+    <div id="map" style="height: 400px; width: 100%; border-radius:10px;"></div>
+</div>
+-->
+
+    <!-- AI CAMERA -->
+    <div class="ai-box">
+        <h2>🌿 AI Plant Scanner</h2>
+        <video id="camera-video" style="display: none; width: 100%; max-width: 300px; border-radius: 8px; margin: 10px 0;"></video>
+        <canvas id="camera-canvas" style="display: none;"></canvas>
+        <button onclick="startCamera()" id="start-btn">📷 Start Camera</button>
+        <button onclick="capturePhoto()" style="display: none;" id="capture-btn">📸 Capture & Analyze</button>
+        <button onclick="resetCamera()" style="display: none;" id="reset-btn">🔄 Reset Camera</button>
+        <div id="ai-result" style="display: none; margin-top: 15px;"></div>
+    </div>
+
+    <!-- AI ADVICE -->
+    <div class="ai-box">
+        <h2>AI Advice</h2>
+        <button onclick="getAdvice()">Get Advice</button>
+        <p id="advice"></p>
+    </div>
+
+    <!-- WEATHER -->
+    <div class="weather">
+        <h2>Weather</h2>
+        <p>Sunny ☀️ - 28°C</p>
+    </div>
+
+    <!-- MARKET -->
+    <div class="market">
+        <h2>Market Prices</h2>
+        <p>Mahindi: 1500 TZS/kg</p>
+        <p>Mpunga: 1800 TZS/kg</p>
+    </div>
+
+</div>
+
+<script src="dashboard.js"></script>
+<script>
+function go(page){
+    window.location.href = page;
+}
+
+function getAdvice(){
+    fetch("http://127.0.0.1:8000/api/ai-advice/")
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("advice").innerText = data.advice;
+    });
+}
+
+// Enhanced camera functionality
+function startCamera() {
+    const video = document.getElementById('camera-video');
+    const captureBtn = document.getElementById('capture-btn');
+    
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment',
+                width: { ideal: 640 },
+                height: { ideal: 500 }
+            } 
+        })
+        .then(function(stream) {
+            video.srcObject = stream;
+            video.style.display = 'block';
+            video.play();
+            captureBtn.style.display = 'inline-block';
+            document.getElementById('start-btn').style.display = 'none';
+        })
+        .catch(function(error) {
+            alert('Camera access denied: ' + error.message);
+        });
+    } else {
+        alert('Camera not supported on this device');
+    }
+}
+
+function capturePhoto() {
+    const video = document.getElementById('camera-video');
+    const canvas = document.getElementById('camera-canvas');
+    const context = canvas.getContext('2d');
+    
+    if (video.srcObject) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0);
+        
+        // Stop camera properly
+        const stream = video.srcObject;
+        if (stream && stream.getTracks) {
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+        } else {
+            // Fallback for older browsers
+            video.pause();
+            video.src = '';
+        }
+        
+        video.style.display = 'none';
+        document.getElementById('capture-btn').style.display = 'none';
+        
+        // Analyze photo with AI
+        analyzePlant(canvas.toDataURL());
+    } else {
+        alert('Camera is not active. Please start the camera first.');
+    }
+}
+
+function analyzePlant(imageData) {
+    // Show loading
+    const resultDiv = document.getElementById('ai-result');
+    if (resultDiv) {
+        resultDiv.innerHTML = '<p>Analyzing plant... Please wait...</p>';
+        resultDiv.style.display = 'block';
+    }
+    
+    // Simulate AI analysis (replace with actual AI API call)
+    setTimeout(() => {
+        const mockResults = [
+            {
+                plant: "Maize (Zea mays)",
+                disease: "Healthy",
+                confidence: 95,
+                advice: "Plant is in good health. Continue regular watering and monitoring."
+            },
+            {
+                plant: "Tomato (Solanum lycopersicum)",
+                disease: "Early Blight",
+                confidence: 87,
+                advice: "Apply copper-based fungicide and remove affected leaves. Improve air circulation."
+            },
+            {
+                plant: "Rice (Oryza sativa)",
+                disease: "Bacterial Leaf Blight",
+                confidence: 92,
+                advice: "Use resistant varieties and apply bactericides. Avoid overhead irrigation."
+            }
+        ];
+        
+        const result = mockResults[Math.floor(Math.random() * mockResults.length)];
+        
+        if (resultDiv) {
+            resultDiv.innerHTML = `
+                <h3>Analysis Results</h3>
+                <p><strong>Plant:</strong> ${result.plant}</p>
+                <p><strong>Condition:</strong> ${result.disease}</p>
+                <p><strong>Confidence:</strong> ${result.confidence}%</p>
+                <p><strong>Advice:</strong> ${result.advice}</p>
+                <img src="${imageData}" style="max-width: 200px; border-radius: 8px; margin-top: 10px;">
+            `;
+            
+            // Show reset button after analysis
+            document.getElementById('reset-btn').style.display = 'inline-block';
+        }
+    }, 2000);
+}
+
+function resetCamera() {
+    const video = document.getElementById('camera-video');
+    const startBtn = document.getElementById('start-btn');
+    const captureBtn = document.getElementById('capture-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const resultDiv = document.getElementById('ai-result');
+    
+    // Hide all buttons and results
+    video.style.display = 'none';
+    startBtn.style.display = 'inline-block';
+    captureBtn.style.display = 'none';
+    resetBtn.style.display = 'none';
+    resultDiv.style.display = 'none';
+    
+    // Clear video source
+    if (video.srcObject) {
+        const stream = video.srcObject;
+        if (stream && stream.getTracks) {
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+        }
+        video.srcObject = null;
+    }
+    
+    // Clear canvas
+    const canvas = document.getElementById('camera-canvas');
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// Satellite NDVI Monitoring
+function loadSatelliteFarms() {
+    const userId = localStorage.getItem("user_id");
+    
+    fetch("http://127.0.0.1:8000/api/farms/")
+    .then(res => res.json())
+    .then(data => {
+        const userFarms = data.filter(farm => Number(farm.user_id) === Number(userId));
+        displaySatelliteFarms(userFarms);
+    })
+    .catch(error => {
+        console.error("Error loading farms:", error);
+        document.getElementById("farmsGrid").innerHTML = "<p>Error loading farms</p>";
+    });
+}
+
+function displaySatelliteFarms(farms) {
+    const farmsGrid = document.getElementById("farmsGrid");
+    
+    if (farms.length === 0) {
+        farmsGrid.innerHTML = "<p>No farms found. Add farms with GPS coordinates to enable satellite monitoring.</p>";
+        return;
+    }
+    
+    let html = "";
+    farms.forEach(farm => {
+        const mapFrame = getSatelliteMap(farm.latitude, farm.longitude);
+        const healthStatus = getFarmHealthStatus(farm);
+        const temp = Math.floor(Math.random() * 10) + 20;
+        const moisture = Math.floor(Math.random() * 50) + 30;
+        
+        html += `
+            <div class="farm-satellite-card">
+                <h3>${farm.farm_name}</h3>
+                <p>📍 ${farm.location}</p>
+                <div class="satellite-image-container">
+                    ${mapFrame}
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iIzMzNyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIFNhdGVsbGl0ZSBEYXRhPC90ZXh0Pjwvc3ZnPg=='">
+                    <div class="health-indicator ${healthStatus.class}">
+                        ${healthStatus.icon} ${healthStatus.text}
+                    </div>
+                </div>
+                <div class="farm-details">
+                <span class="farm-type">🌱 ${farm.farm_type}</span>
+
+                <p>🌡 Temp: ${temp}°C</p>
+                <p>💧 Moisture: ${moisture}%</p>
+                </div>
+            </div>
+        `;
+    });
+    
+    farmsGrid.innerHTML = html;
+}
+
+function getSatelliteMap(latitude, longitude) {
+    // Use actual farm coordinates, no defaults
+    if (!latitude || !longitude) {
+        // Return placeholder if no coordinates available
+        return `
+            <div style="width:100%; height:150px; border-radius:10px; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.6);">
+                <div style="text-align:center;">
+                    <div style="font-size:2em; margin-bottom:10px;">📍</div>
+                    <div>No GPS coordinates available</div>
+                    <div style="font-size:0.8em; margin-top:5px;">Add GPS coordinates in Farms page</div>
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <iframe
+            width="100%"
+            height="150"
+            style="border-radius:10px; border:none;"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=${longitude-0.01}%2C${latitude-0.01}%2C${longitude+0.01}%2C${latitude+0.01}&layer=mapnik&marker=${latitude}%2C${longitude}">
+        </iframe>
+    `;
+}
+
+function getFarmHealthStatus(farm) {
+    // Simulate health status based on random data for demo
+    // In production, calculate from actual NDVI values
+    const healthScore = Math.random();
+    
+    if (healthScore > 0.7) {
+        return {
+            class: "health-good",
+            icon: "✅",
+            text: "Healthy"
+        };
+    } else if (healthScore > 0.4) {
+        return {
+            class: "health-medium", 
+            icon: "⚠️",
+            text: "Medium"
+        };
+    } else {
+        return {
+            class: "health-bad",
+            icon: "❌",
+            text: "Poor"
+        };
+    }
+}
+
+// Initialize satellite monitoring on page load
+document.addEventListener('DOMContentLoaded', function() {
+
+    if(!localStorage.getItem("user_id")){
+        window.location.href = "login.html";
+        return;
+    }
+
+    loadMap(); // muhimu sana
+});
+
+function loadMap() {
+    const userId = localStorage.getItem("user_id");
+
+    // Create map (Tanzania default)
+    const map = L.map('map').setView([-6.8, 39.2], 6);
+
+    // Load map tiles (real map)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: ' OpenStreetMap'
+    }).addTo(map);
+
+    // Load real satellite data
+    loadSatelliteData(map);
+}
+
+function loadSatelliteData(map) {
+    const userId = localStorage.getItem("user_id");
+    
+    // Fetch satellite data from backend
+    fetch(`http://127.0.0.1:8000/api/satellite/?user_id=${userId}`)
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            displaySatelliteFarmsOnMap(data.satellite_data, map);
+            updateSatelliteDashboard(data.satellite_data);
+        } else {
+            console.error("Error loading satellite data:", data.error);
+            // Fallback to regular farm data
+            loadRegularFarms(map);
+        }
+    })
+    .catch(err => {
+        console.error("Error:", err);
+        // Fallback to regular farm data
+        loadRegularFarms(map);
+    });
+}
+
+function displaySatelliteFarmsOnMap(satelliteData, map) {
+    if (satelliteData.length === 0) {
+        alert("No farms with GPS coordinates found. Add GPS coordinates to enable satellite monitoring.");
+        return;
+    }
+
+    // Clear existing markers
+    if (window.farmMarkers) {
+        window.farmMarkers.forEach(marker => map.removeLayer(marker));
+    }
+    window.farmMarkers = [];
+
+    satelliteData.forEach(farm => {
+        const color = farm.health_status.color;
+        const status = farm.health_status.status;
+        
+        // Create custom marker with health indicator
+        const marker = L.circleMarker([farm.latitude, farm.longitude], {
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.7,
+            radius: 10,
+            weight: 2
+        }).addTo(map);
+
+        // Create popup with satellite data
+        const popupContent = `
+            <div style="min-width: 200px;">
+                <h4 style="margin: 0 0 10px 0; color: ${color};">${farm.farm_name}</h4>
+                <p style="margin: 5px 0;"><strong>Location:</strong> ${farm.location}</p>
+                <p style="margin: 5px 0;"><strong>Type:</strong> ${farm.farm_type}</p>
+                <p style="margin: 5px 0;"><strong>GPS:</strong> ${farm.latitude.toFixed(4)}, ${farm.longitude.toFixed(4)}</p>
+                <hr style="margin: 10px 0;">
+                <p style="margin: 5px 0;"><strong>NDVI:</strong> ${farm.ndvi.toFixed(3)}</p>
+                <p style="margin: 5px 0;"><strong>Health:</strong> <span style="color: ${color};">${status}</span></p>
+                <p style="margin: 5px 0;"><strong>Weather:</strong> ${farm.weather.temperature}°C, ${farm.weather.condition}</p>
+                <img src="${farm.satellite_image_url}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px; margin-top: 10px;" alt="Satellite Image">
+            </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        window.farmMarkers.push(marker);
+    });
+
+    // Center map on farms
+    if (window.farmMarkers.length > 0) {
+        const group = new L.featureGroup(window.farmMarkers);
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
+}
+
+function updateSatelliteDashboard(satelliteData) {
+    // Remove existing satellite section if it exists
+    const existingSection = document.querySelector('.satellite-dashboard');
+    if (existingSection) {
+        existingSection.remove();
+    }
+
+    // Create farm health information section at the bottom
+    const farmHealthSection = document.createElement('div');
+    farmHealthSection.className = 'farm-health-section';
+    
+    if (satelliteData.length === 0) {
+        farmHealthSection.innerHTML = `
+            <div class="no-farms-health">
+                <h3>🛰️ Taarifa za Health ya Shamba</h3>
+                <p>Hakuna mashamba yenye coordinates zilizoongezwa. Ongeza coordinates kwenye mashamba yako kuona taarifa za health.</p>
+            </div>
+        `;
+    } else {
+        farmHealthSection.innerHTML = `
+            <div class="farm-health-header">
+                <h3>🛰️ Taarifa za Health ya Shamba (Satellite Monitoring)</h3>
+                <p>Maelezo ya afya ya mashamba yako kutokana na satellite data na NDVI calculations</p>
+            </div>
+            <div class="farm-health-grid">
+                ${satelliteData.map(farm => `
+                    <div class="farm-health-card health-${farm.health_status.icon}">
+                        <div class="farm-health-header-info">
+                            <h4>🏡 ${farm.farm_name}</h4>
+                            <div class="health-badge ${farm.health_status.icon}">
+                                ${farm.health_status.status}
+                            </div>
+                        </div>
+                        
+                        <div class="farm-health-details">
+                            <div class="health-metric">
+                                <span class="metric-icon">📊</span>
+                                <div class="metric-info">
+                                    <span class="metric-label">NDVI Index</span>
+                                    <span class="metric-value">${farm.ndvi.toFixed(3)}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="health-metric">
+                                <span class="metric-icon">🌡️</span>
+                                <div class="metric-info">
+                                    <span class="metric-label">Joto</span>
+                                    <span class="metric-value">${farm.weather.temperature}°C</span>
+                                </div>
+                            </div>
+                            
+                            <div class="health-metric">
+                                <span class="metric-icon">💧</span>
+                                <div class="metric-info">
+                                    <span class="metric-label">Unyevu</span>
+                                    <span class="metric-value">${farm.weather.humidity}%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="health-metric">
+                                <span class="metric-icon">📍</span>
+                                <div class="metric-info">
+                                    <span class="metric-label">Mahali</span>
+                                    <span class="metric-value">${farm.location}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="health-metric">
+                                <span class="metric-icon">📡</span>
+                                <div class="metric-info">
+                                    <span class="metric-label">GPS</span>
+                                    <span class="metric-value">${Number(farm.latitude).toFixed(4)}, ${Number(farm.longitude).toFixed(4)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="farm-health-footer">
+                            <span class="update-time">🕒 Imehesabiwa: ${farm.last_updated}</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    // Add to the bottom of the main content area
+    const mainContent = document.querySelector('.main-content') || document.body;
+    mainContent.appendChild(farmHealthSection);
+}
+
+function loadRegularFarms(map) {
+    // Fallback function to load regular farm data
+    const userId = localStorage.getItem("user_id");
+
+    fetch("http://127.0.0.1:8000/api/farms/")
+    .then(res => res.json())
+    .then(data => {
+        const userFarms = data.filter(f => Number(f.user_id) === Number(userId));
+
+        if (userFarms.length === 0) {
+            alert("Hakuna farms bado");
+            return;
+        }
+
+        userFarms.forEach(farm => {
+            const lat = farm.latitude || -6.8;
+            const lon = farm.longitude || 39.2;
+
+            L.marker([lat, lon]).addTo(map)
+            .bindPopup(`
+                <b>${farm.farm_name}</b><br>
+                ${farm.location}<br>
+                ${farm.farm_type}<br>
+                GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}
+            `);
+        });
+    })
+    .catch(err => {
+        console.error("Error:", err);
+    });
+}
+
+</script>
+
+</body>
+</html>
