@@ -121,8 +121,8 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 
-const API = "http://127.0.0.1:8000/api/farms/";
-const ADD_API = "http://127.0.0.1:8000/api/farms/add/";
+const API = "https://shamba-bora-3.onrender.com/api/farms/";
+const ADD_API = "https://shamba-bora-3.onrender.com/api/farms/add/";
 
 // Global map variable
 let farmMap;
@@ -137,7 +137,7 @@ function loadFarms() {
     console.log("User ID from localStorage:", userId);
     console.log("User ID type:", typeof userId);
 
-    fetch("http://127.0.0.1:8000/api/farms/")
+    fetch("https://shamba-bora-3.onrender.com/api/farms/")
     .then(res => {
         console.log("Response status:", res.status);
         return res.json();
@@ -189,7 +189,7 @@ function loadFarms() {
                     <h4>❌ Error Loading Farms</h4>
                     <p><strong>Error:</strong> ${err.message}</p>
                     <p><strong>Type:</strong> ${err.name}</p>
-                    <p><strong>URL:</strong> http://127.0.0.1:8000/api/farms/</p>
+                    <p><strong>URL:</strong> https://shamba-bora-3.onrender.com/api/farms/</p>
                     <p><strong>Solution:</strong> Please check if Django server is running and CORS is configured.</p>
                     <button onclick="loadFarms()" style="margin-top: 10px; padding: 8px 16px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button>
                 </div>
@@ -456,7 +456,7 @@ function searchByCoordinates() {
 function checkNearbyFarms(searchLat, searchLon) {
     const userId = localStorage.getItem("user_id");
     
-    fetch("http://127.0.0.1:8000/api/farms/")
+    fetch("https://shamba-bora-3.onrender.com/api/farms/")
         .then(res => res.json())
         .then(data => {
             const userFarms = data.filter(farm => Number(farm.user_id) === Number(userId));
@@ -537,7 +537,7 @@ function addFarm() {
         farmData.longitude = parseFloat(longitude);
     }
 
-    fetch("http://127.0.0.1:8000/api/farms/add/", {
+    fetch("https://shamba-bora-3.onrender.com/api/farms/add/", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

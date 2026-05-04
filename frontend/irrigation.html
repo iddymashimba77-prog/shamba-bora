@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Load soil moisture data
 function loadMoistureData() {
-    fetch("http://127.0.0.1:8000/api/sensor-data/")
+    fetch("https://shamba-bora-3.onrender.com/api/sensor-data/")
     .then(res => res.json())
     .then(data => {
         if (data.length > 0) {
@@ -188,7 +188,7 @@ function control(action) {
         status: action === 'ON' ? 'active' : 'inactive'
     };
 
-    fetch("http://127.0.0.1:8000/api/irrigation/", {
+    fetch("https://shamba-bora-3.onrender.com/api/irrigation/", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"

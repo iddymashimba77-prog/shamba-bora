@@ -202,7 +202,7 @@ function loadUserProfile() {
     }
     
     // Always try to fetch from backend for fresh data
-    fetch(`http://127.0.0.1:8000/api/users/${userId}/`)
+    fetch(`https://shamba-bora-3.onrender.com/api/users/${userId}/`)
     .then(res => {
         if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
@@ -260,7 +260,7 @@ function displayUserInfo(userInfo) {
 function loadUserFarms() {
     const userId = localStorage.getItem("user_id");
     
-    fetch("http://127.0.0.1:8000/api/farms/")
+    fetch("https://shamba-bora-3.onrender.com/api/farms/")
     .then(res => res.json())
     .then(data => {
         const userFarms = data.filter(farm => farm.user == userId || farm.user_name == userId);
@@ -296,7 +296,7 @@ function updateProfile() {
         phone: phone
     };
     
-    fetch(`http://127.0.0.1:8000/api/users/${userId}/`, {
+    fetch(`https://shamba-bora-3.onrender.com/api/users/${userId}/`, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json"
@@ -343,7 +343,7 @@ function changePassword() {
     
     const userId = localStorage.getItem("user_id");
     
-    fetch(`http://127.0.0.1:8000/api/users/${userId}/change-password/`, {
+    fetch(`https://shamba-bora-3.onrender.com/api/users/${userId}/change-password/`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -479,7 +479,7 @@ function exportData() {
     };
     
     // Fetch farms data
-    fetch("http://127.0.0.1:8000/api/farms/")
+    fetch("https://shamba-bora-3.onrender.com/api/farms/")
     .then(res => res.json())
     .then(data => {
         exportData.farms = data.filter(farm => farm.user == userId || farm.user_name == userId);
@@ -508,7 +508,7 @@ function deleteAccount() {
     if (confirmation === "DELETE") {
         const userId = localStorage.getItem("user_id");
         
-        fetch(`http://127.0.0.1:8000/api/users/${userId}/`, {
+        fetch(`https://shamba-bora-3.onrender.com/api/users/${userId}/`, {
             method: "DELETE"
         })
         .then(res => res.json())
