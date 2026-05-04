@@ -409,7 +409,7 @@ async function sendToAI(message) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
-        const response = await fetch('http://localhost:5000/ask-ai', {
+        const response = await fetch('https://smartshamba-ai.onrender.com/ask-ai', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message: message })
@@ -594,7 +594,7 @@ async function analyzeWithServer(imageBlob) {
     try {
         const base64Image = await blobToBase64(imageBlob);
 
-        const response = await fetch('http://localhost:5000/scan-plant', {
+        const response = await fetch('https://smartshamba-ai.onrender.com/scan-plant', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ imageData: base64Image.split(',')[1] })
